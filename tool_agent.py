@@ -129,11 +129,11 @@ class ToolAgent: # communicates with an LLM and manages a collection of tools/ b
 
                 if tool_object:
                     # 2. Validate the arguments using the tool's signature
-                    validated_arguments = validate_argument(tool_call_deserialized, tool_object.fn_signature)
+                    validated_call = validate_argument(tool_call_deserialized, tool_object.fn_signature)
 
                     # 3. Run the tool and get the observation
                     # part of the logic that processes the LLM’s response after extracting a <tool_code> tag (using extract_tag_content) and finding the corresponding tool (using next(...)). It’s the step that turns the LLM’s decision (e.g., “use the get_weather tool with city=London”) into an actual action (e.g., fetching the weather).
-                    observation = tool_object.run(**validated_arguments["arguments"])
+                    observation = tool_object.run(**validated_call["arguments"])
 
                     # Add the observation to the agent's chat history
                     agent_chat_history.append({"role": "user", f"content": {observation}})
