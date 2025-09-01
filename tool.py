@@ -2,6 +2,7 @@
 
 import json
 from typing import Callable
+import requests
 
 # take a standard Python function and turn it into a structured dictionary that the LLM can read 
 def get_fn_signature(fn: Callable)->dict:
@@ -82,3 +83,65 @@ class Tool:
         """
         # code to run the function
         return self.fn(**kwargs)
+
+COMMON_TOPICS = {
+    "love": "john 3:16",
+    "patience": "romans 5:3-4",
+    "strength": "isaiah 40:31",
+    "faith": "hebrews 11:1"
+}
+
+def fetch_daily_verse():
+    """Fetches a random verse for the day"""
+    # placeholder for API call later
+    print("ACTION: Fetching daily verse from API...")
+
+    try:
+        response = requests.get("https://bible-api.com/?random=verse")
+        status_code = response.status_code
+
+        if status_code == 404:
+            return "Error: Page not found (404)"
+        elif status_code == 500:
+            return "Error: Internal server error (500)"
+        else:        
+            data = response.json()
+            verse_text = data.get("text", "No text found.")
+            verse_ref = data.get("reference", "No reference found.")
+            return f"{verse_ref} - {verse_text}"        
+    except requests.exceptions.RequestException as e:
+        return f"Error: failed to retrieve a daily verse. {e}"
+    
+    
+
+def search_topic(topic: str):
+    """Searches for a verse about a specific topic using a mock-like API call"""
+    print(f"ACTION: Searching for verses about '{topic}'...")
+    # this API doesn't support topic search directly, so we'll fall back to our mock logic
+    reference = COMMON_TOPICS.get(topic.lower())
+    if reference:
+        try:
+            response = requests.get(f"https://bible-api.com/{reference}")
+            response.raise_for_status()
+            data = response.json()
+            verse_text = data.get("text", "No text found.")
+            return f"{data.get('reference')} - {verse_text}"
+        except requests.exceptions.RequestException as e:
+            return f"Error: Failed to retrieve verse for topic. {e}"
+    else:
+        return f"Sorry, I couldn't find the verse for the topic: '{topic}'"
+    
+    
+def get_book_list()->list[str]:
+    """Returns a list of all books in the bible"""
+    print("ACTION: Listing all the books...")
+    return ["Matthew", "Mark", "Luke", "John"]
+
+def get_verse_by_chapter(book:str, chapter:int):
+    """Returns required book and its chapter"""
+    print("ACTION: Getting required book and chapter....")
+    
+    if book.lower()=="john" and chapter==3:
+        return "John 3:16 - For God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life."
+    else:
+        return f"Sorry I couldn't find the verse from '{book}' chapter {chapter}"

@@ -3,7 +3,15 @@ import json
 import os
 from dotenv import load_dotenv
 import re # provides support for regular expressions in python -> used for pattern matching in strings
-from tool import validate_argument
+from tool import (
+    validate_argument,
+    get_fn_signature,
+    Tool,
+    fetch_daily_verse,
+    search_topic,
+    get_book_list,
+    get_verse_by_chapter,
+)
 
 load_dotenv()
 
@@ -92,7 +100,7 @@ class ToolAgent: # communicates with an LLM and manages a collection of tools/ b
         try:
             llm_response=self.client.chat.completions.create(
                 messages=tool_chat_history,
-                model="llama3-8b-8192"
+                model="openai/gpt-oss-120b"
             )
         except Exception as e:
             # for now we'll just print the error
@@ -143,7 +151,7 @@ class ToolAgent: # communicates with an LLM and manages a collection of tools/ b
 
                     final_response = self.client.chat.completions.create(
                         messages=final_chat_history,
-                        model="llama3-8b-8192"
+                        model="openai/gpt-oss-120b"
                     )
 
                     return final_response.choices[0].message.content
@@ -154,3 +162,41 @@ class ToolAgent: # communicates with an LLM and manages a collection of tools/ b
         else:
             # if no tool call was found, the LLM content is the final answer
             return llm_content
+
+if __name__ == "__main__":
+    # 1. Create the tools
+    tools = [
+        Tool(
+            name="fetch_daily_verse",
+            fn=fetch_daily_verse,
+            fn_signature=get_fn_signature(fetch_daily_verse),
+        ),
+        Tool(
+            name="search_topic",
+            fn=search_topic,
+            fn_signature=get_fn_signature(search_topic),
+        ),
+        Tool(
+            name="get_book_list",
+            fn=get_book_list,
+            fn_signature=get_fn_signature(get_book_list),
+        ),
+        Tool(
+            name="get_verse_by_chapter",
+            fn=get_verse_by_chapter,
+            fn_signature=get_fn_signature(get_verse_by_chapter),
+        ),
+    ]
+
+    # 2. Initialize the agent
+    agent = ToolAgent(client=client, tools=tools)
+
+    # 3. Start the conversation loop
+    print("Bible Tool Agent. Ask me for 'today's verse' or a 'verse about [topic]'. Type 'exit' to quit.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == "exit":
+            break
+        
+        response = agent.run(user_input)
+        print(f"Agent: {response}")
